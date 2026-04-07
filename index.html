@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinApp Pro</title>
+    <!-- Bibliotecas Externas - Formato Puro Corrigido -->
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
+    <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)"></script>
+    <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)"></script>
+    <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        body { margin: 0; padding: 0; overflow-x: hidden; font-family: sans-serif; }
+        #root { min-height: 100vh; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 transition-colors duration-300">
+    <div id="root">
+        <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-weight: bold; color: #4f46e5; flex-direction: column; gap: 15px;">
+            <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <span>A carregar FinApp...</span>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('fin_theme') === 'dark');
+            const [transactions, setTransactions] = useState(() => JSON.parse(localStorage.getItem('fin_transactions')) || []);
+
+            useEffect(() => {
+                localStorage.setItem('fin_transactions', JSON.stringify(transactions));
+                localStorage.setItem('fin_theme', darkMode ? 'dark' : 'light');
+                if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                
+                const timer = setTimeout(() => {
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                }, 100);
+                return () => clearTimeout(timer);
+            }, [transactions, darkMode, activeTab, isModalOpen]);
+
+            const formatCurrency = (val) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(val);
+
+            const stats = useMemo(() => {
+                const balance = transactions.reduce((sum, t) => t.type === 'income' ? sum + Number(t.amount) : sum - Number(t.amount), 0);
+                const expenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
+                return { balance, expenses };
+            }, [transactions]);
+
+            return (
+                <div className={`min-h-screen flex flex-col md:flex-row ${darkMode ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-800'}`}>
+                    <aside className={`w-full md:w-64 border-r sticky top-0 z-20 ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                        <div className="p-8 flex items-center gap-3">
+                            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg">F</div>
+                            <h1 className="font-black text-xl tracking-tighter">FinApp</h1>
+                        </div>
+                        <nav className="px-4 space-y-2">
+                            <button onClick={() => setActiveTab('dashboard')} className={`flex items-center gap-3 w-full p-4 rounded-2xl transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                                <Icon name="home" /> <span className="text-sm font-bold">Painel</span>
+                            </button>
+                            <button onClick={() => setActiveTab('history')} className={`flex items-center gap-3 w-full p-4 rounded-2xl transition-all ${activeTab === 'history' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                                <Icon name="list" /> <span className="text-sm font-bold">Histórico</span>
+                            </button>
+                        </nav>
+                        <div className="p-6 mt-10">
+                            <button onClick={() => setIsModalOpen(true)} className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-4 rounded-2xl font-black shadow-lg flex items-center justify-center gap-2 text-xs uppercase tracking-wider hover:scale-105 transition-all">
+                                <Icon name="plus" size={16} /> Novo Gasto
+                            </button>
+                        </div>
+                    </aside>
+
+                    <main className="flex-1 p-6 md:p-12 animate-fade-in">
+                        <div className="max-w-5xl mx-auto">
+                            <div className="flex justify-between items-center mb-10">
+                                <div>
+                                    <h2 className="text-4xl font-black tracking-tight">Olá! 👋</h2>
+                                    <p className="text-slate-500 font-medium">Controlo total das tuas poupanças.</p>
+                                </div>
+                                <button onClick={() => setDarkMode(!darkMode)} className="p-3 rounded-2xl bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-sm transition-all hover:bg-slate-100 dark:hover:bg-slate-700">
+                                    <Icon name={darkMode ? "sun" : "moon"} className={darkMode ? "text-amber-500" : "text-slate-400"} />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="p-8 rounded-[2.5rem] bg-indigo-600 text-white shadow-2xl shadow-indigo-500/30">
+                                    <p className="text-[10px] font-black uppercase opacity-60 tracking-[0.2em] mb-2">Saldo</p>
+                                    <h3 className="text-5xl font-black mb-4 truncate">{formatCurrency(stats.balance)}</h3>
+                                    <div className="h-1 w-12 bg-white/30 rounded-full"></div>
+                                </div>
+                                <div className={`p-8 rounded-[2.5rem] border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
+                                    <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-2">Gastos Totais</p>
+                                    <h3 className="text-5xl font-black truncate">{formatCurrency(stats.expenses)}</h3>
+                                </div>
+                            </div>
+
+                            <div className="mt-12">
+                                <h3 className="text-xl font-black mb-6 flex items-center gap-2 text-indigo-500">
+                                    <Icon name="history" /> Movimentos Recentes
+                                </h3>
+                                <div className="space-y-3">
+                                    {transactions.length === 0 ? (
+                                        <div className="text-center py-16 bg-slate-100 dark:bg-slate-900/50 rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
+                                            <p className="text-slate-400 font-bold italic">Nada registado ainda.</p>
+                                        </div>
+                                    ) : (
+                                        transactions.slice().reverse().map(t => (
+                                            <div key={t.id} className={`p-5 rounded-3xl flex justify-between items-center ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-50 shadow-sm'} border transition-all hover:translate-x-1`}>
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white ${t.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                                                        <Icon name={t.type === 'income' ? 'trending-up' : 'trending-down'} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-black text-sm">{t.description}</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold">{t.date}</p>
+                                                    </div>
+                                                </div>
+                                                <span className={`font-black text-lg ${t.type === 'income' ? 'text-emerald-500' : ''}`}>
+                                                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                                                </span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+
+                    {isModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                            <div className={`w-full max-w-md p-8 rounded-[3rem] shadow-2xl animate-fade-in ${darkMode ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
+                                <div className="flex justify-between items-center mb-8">
+                                    <h3 className="text-2xl font-black">Adicionar</h3>
+                                    <button onClick={() => setIsModalOpen(false)} className="p-2 bg-rose-50 dark:bg-rose-900/20 rounded-full text-rose-500"><Icon name="x" /></button>
+                                </div>
+                                <form className="space-y-5" onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const fd = new FormData(e.target);
+                                    const newTx = {
+                                        id: Date.now(),
+                                        description: fd.get('desc'),
+                                        amount: parseFloat(fd.get('amount')),
+                                        type: fd.get('type'),
+                                        date: new Date().toLocaleDateString('pt-PT')
+                                    };
+                                    setTransactions([...transactions, newTx]);
+                                    setIsModalOpen(false);
+                                }}>
+                                    <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-2xl">
+                                        <label className="cursor-pointer">
+                                            <input type="radio" name="type" value="expense" defaultChecked className="peer hidden" />
+                                            <div className="p-3 text-center rounded-xl font-black text-xs text-slate-400 peer-checked:bg-white dark:peer-checked:bg-slate-700 peer-checked:text-rose-500 transition-all">Gasto</div>
+                                        </label>
+                                        <label className="cursor-pointer">
+                                            <input type="radio" name="type" value="income" className="peer hidden" />
+                                            <div className="p-3 text-center rounded-xl font-black text-xs text-slate-400 peer-checked:bg-white dark:peer-checked:bg-slate-700 peer-checked:text-emerald-500 transition-all">Receita</div>
+                                        </label>
+                                    </div>
+                                    <input name="desc" placeholder="Ex: Compras" required className="w-full p-5 rounded-2xl bg-slate-100 dark:bg-slate-900 border-none font-bold outline-none" />
+                                    <input name="amount" type="number" step="0.01" placeholder="Valor €" required className="w-full p-5 rounded-2xl bg-slate-100 dark:bg-slate-900 border-none font-black text-2xl outline-none" />
+                                    <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl">Guardar</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
